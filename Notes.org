@@ -1,0 +1,29 @@
+* TODO 0\nu\beta\beta
+- maybe a nice intro and overview https://inspirehep.net/record/1720046
+- nice intro https://inspirehep.net/record/1703561
+
+* TODO Hayes
+- http://inspirehep.net/record/1419941
+- http://inspirehep.net/record/619584
+- http://inspirehep.net/record/504380
+- http://inspirehep.net/record/503544
+
+file downloads
+(require 'url)
+
+(defun download-file (&optional url download-dir download-name)
+  (interactive)
+  (let ((url (or url
+                 (read-string "Enter download URL: "))))
+    (let ((download-buffer (url-retrieve-synchronously url)))
+      (save-excursion
+        (set-buffer download-buffer)
+        ;; we may have to trim the http response
+        (goto-char (point-min))
+        (re-search-forward "^$" nil 'move)
+        (forward-char)
+        (delete-region (point-min) (point))
+        (write-file (concat (or download-dir
+                                "~/downloads/")
+                            (or download-name
+                                (car (last (split-string url "/" t))))))))))
