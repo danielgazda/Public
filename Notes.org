@@ -1,4 +1,4 @@
-* TODO 0\nu\beta\beta
+* TODO $0\nu\beta\beta$
 - maybe a nice intro and overview https://inspirehep.net/record/1720046
 - nice intro https://inspirehep.net/record/1703561
 
