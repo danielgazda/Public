@@ -1,2 +1,0 @@
-* emacs command cheat sheet
-https://caiorss.github.io/Emacs-Elisp-Programming/Keybindings.html
