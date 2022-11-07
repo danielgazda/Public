@@ -1,0 +1,121 @@
+* Calling fortran routine from python using f2py
+
+F2py is quite picky about the dialect of Fortran, so if the file is in
+F77 fixed-form, then the extension should be .f and when it's in
+free-form F90 and higher, then it should be .f90.
+
+#+begin_src f90 :tangle "/tmp/fortran_file.f90"
+  ! fortran_file.f90
+  module m
+    implicit none
+    integer :: var = 1
+
+  contains
+
+    subroutine s(i,o,x,z)
+      integer, intent(in) :: i
+      double precision, intent(in) :: x
+      integer, intent(out) :: o
+      double precision, intent(out) :: z
+      !f2py intent(in) :: i
+      !f2py intent(in) :: x
+      !f2py intent(out) :: o
+      !f2py intent(out) :: z
+      o = i * 2
+      z = x * 3.0d0
+    end subroutine s
+
+    subroutine t(d,i,o)
+      integer, intent(in) :: d,i(d)
+      integer, intent(out) :: o(d)
+      !f2py intent(in) :: d
+      !f2py intent(in) :: i(d)
+      !f2py intent(out) :: o(d)
+      o = i * 2
+    end subroutine t
+
+    double precision function f(d, x)
+      integer, intent(in) :: d
+      double precision, intent(in) :: x(d)
+      !f2py intent(in) :: d
+      !f2py intent(in) :: x(d)
+      f = sum(x)
+    end function f
+
+    integer function testvar()
+      implicit none
+      testvar = var
+    end function testvar
+
+  end module m
+#+end_src
+
+It also works with simple routines and f2py usually recognizes the
+input/output arguments correctly even without the !f2py directives:
+
+#+begin_src f90 :tangle "/tmp/fortran_sub.f90"
+  ! fortran_sub.f90
+  subroutine sub(d,x,y)
+    implicit none
+    integer, intent(in) :: d
+    double precision, intent(in) :: x(d)
+    double precision, intent(out) :: y(d)
+    y = sin(x)
+  end subroutine sub
+#+end_src
+
+Use f2py to create wrapper modules (requires NumPy):
+
+#+begin_src shell :dir "/tmp/" :results raw output
+  f2py3 -c fortran_file.f90 -m fortran_file
+  f2py3 -c fortran_sub.f90 -m fortran_sub
+#+end_src
+
+Import the wrappers in Python code
+
+#+begin_src python :dir "/tmp/" :results raw output :tangle "/tmp/python_file.py"
+  # python_file.py
+  import numpy as np
+  import fortran_file as ff
+  from fortran_sub import sub as fsin
+
+  # It's good to check that all function and subroutine parameters are understood properly and what object types it returns
+  print(ff.m.s.__doc__)
+  print(ff.m.t.__doc__)
+  print(ff.m.f.__doc__)
+  print(ff.m.testvar.__doc__)
+  print(fsin.__doc__)
+
+  # Test it
+
+  # Access module variables
+  print("ff.m.var = ", ff.m.var, type(ff.m.var))
+
+  # Test if we can change module variables and it is reflected in module functions which use them
+  print(ff.m.testvar())
+  ff.m.var = 9
+  print(ff.m.testvar())
+
+  # Call module functions and subs
+  # Fortran subroutines are converted into normal python functions
+  o, z = ff.m.s(1,2.0)
+  print(o, z)
+
+  i = np.linspace(0,9,10)
+  o = ff.m.t(i)
+  print("o=", o, type(o), o.dtype, o.shape)
+
+  x = np.ones(10)
+  sum = ff.m.f(x)
+  print("sum=", sum, type(sum))
+
+  x = np.linspace(0,np.pi,10)
+  fsin = fsin(x)
+  print("fsin = ", fsin, type(fsin), fsin.dtype, fsin.shape)
+#+end_src
+
+Run the python code
+
+#+begin_src shell :dir "/tmp/" :results raw output
+  python3 python_file.py
+#+end_src
