@@ -1,4 +1,4 @@
-* Calling fortran routine from python using f2py
+* Calling fortran subroutines/functions from python using f2py
 
 F2py is quite picky about the dialect of Fortran, so if the file is in
 F77 fixed-form, then the extension should be .f and when it's in
